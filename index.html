@@ -1,1 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>❤️ Trouve ta moitié !</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .step { display: none; }
+        .active { display: block; }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        button { background: #e91e63; color: white; border: none; cursor: pointer; }
+        .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <!-- Étape 1 : Recherche du numéro -->
+    <div id="step1" class="step active">
+        <h2>🔍 Numéro de cœur</h2>
+        <input type="number" id="heartNumber" placeholder="Entrez votre numéro">
+        <button onclick="checkNumber()">Vérifier</button>
+    </div>
 
+    <!-- Étape 2 : Enregistrement -->
+    <div id="step2" class="step">
+        <h2>📝 Créer votre compte</h2>
+        <input type="password" id="password" placeholder="Choisissez un mot de passe">
+        <input type="text" id="prenom" placeholder="Votre prénom">
+        <input type="text" id="classe" placeholder="Votre classe">
+        <button onclick="register()">Valider</button>
+    </div>
+
+    <!-- Étape 3 : Connexion -->
+    <div id="step3" class="step">
+        <h2>🔑 Connexion</h2>
+        <input type="password" id="loginPassword" placeholder="Votre mot de passe">
+        <button onclick="login()">Se connecter</button>
+    </div>
+
+    <!-- Résultats -->
+    <div id="result"></div>
+
+    <script>
+        const SCRIPT_URL = "INSÉREZ_VOTRE_URL_ICI";
+        let currentHeartNumber;
+
+        async function checkNumber() {
+            currentHeartNumber = document.getElementById('heartNumber').value;
+            const response = await fetch(`${SCRIPT_URL}?action=check&heartNumber=${currentHeartNumber}`);
+            const data = await response.json();
+            
+            if (data.count === 2) {
+                showStep('step3');
+            } else {
+                showStep('step2');
+            }
+        }
+
+        async function register() {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'register',
+                    heartNumber: currentHeartNumber,
+                    password: document.getElementById('password').value,
+                    prenom: document.getElementById('prenom').value,
+                    classe: document.getElementById('classe').value
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                showResult(result.status === 'second' ? 
+                    "🎉 Votre jumeau est enregistré ! Connectez-vous" : 
+                    "✅ Premier compte créé !", 'success');
+                showStep('step3');
+            }
+        }
+
+        async function login() {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'login',
+                    heartNumber: currentHeartNumber,
+                    password: document.getElementById('loginPassword').value
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                if (result.partner) {
+                    showResult(`❤️ Votre moitié est ${result.partner.prenom} (${result.partner.classe})`, 'success');
+                } else {
+                    showResult("⏳ En attente de votre jumeau...", 'info');
+                }
+            } else {
+                showResult(result.message, 'error');
+            }
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function showResult(message, type = 'info') {
+            const colors = {
+                success: '#4CAF50',
+                error: '#f44336',
+                info: '#2196F3'
+            };
+            document.getElementById('result').innerHTML = `
+                <div class="alert" style="background-color: ${colors[type]}11; border-color: ${colors[type]}; color: ${colors[type]}">
+                    ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
